@@ -215,7 +215,7 @@ func cleanupStaleMultipartUploads(cleanupInterval, expiry time.Duration, obj Obj
 			ticker.Stop()
 			return
 		case <-ticker.C:
-			bucketInfos, err := obj.ListBuckets()
+			bucketInfos, err := obj.ListBuckets(nil)
 			if err != nil {
 				errorIf(err, "Unable to list buckets")
 				continue
@@ -242,7 +242,7 @@ func cleanupStaleMultipartUpload(bucket string, expiry time.Duration, obj Object
 		// Remove uploads (and its parts) older than expiry duration.
 		for _, upload := range lmi.Uploads {
 			if time.Since(upload.Initiated) > expiry {
-				obj.AbortMultipartUpload(bucket, upload.Object, upload.UploadID)
+				obj.AbortMultipartUpload(nil, bucket, upload.Object, upload.UploadID)
 			}
 		}
 
