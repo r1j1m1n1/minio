@@ -366,7 +366,7 @@ func loadNotificationConfig(bucket string, objAPI ObjectLayer) (*notificationCon
 	ncPath := path.Join(bucketConfigPrefix, bucket, bucketNotificationConfig)
 
 	var buffer bytes.Buffer
-	err := objAPI.GetObject(minioMetaBucket, ncPath, 0, -1, &buffer, "") // Read everything.
+	err := objAPI.GetObject(nil, minioMetaBucket, ncPath, 0, -1, &buffer, "") // Read everything.
 	if err != nil {
 		// 'notification.xml' not found return
 		// 'errNoSuchNotifications'.  This is default when no
@@ -410,7 +410,7 @@ func loadListenerConfig(bucket string, objAPI ObjectLayer) ([]listenerConfig, er
 	lcPath := path.Join(bucketConfigPrefix, bucket, bucketListenerConfig)
 
 	var buffer bytes.Buffer
-	err := objAPI.GetObject(minioMetaBucket, lcPath, 0, -1, &buffer, "")
+	err := objAPI.GetObject(nil, minioMetaBucket, lcPath, 0, -1, &buffer, "")
 	if err != nil {
 		// 'listener.json' not found return
 		// 'errNoSuchNotifications'.  This is default when no
@@ -456,7 +456,7 @@ func persistNotificationConfig(bucket string, ncfg *notificationConfig, obj Obje
 		errorIf(err, "Unable to write bucket notification configuration.")
 		return err
 	}
-	_, err = obj.PutObject(minioMetaBucket, ncPath, hashReader, nil)
+	_, err = obj.PutObject(nil, minioMetaBucket, ncPath, hashReader, nil)
 	if err != nil {
 		errorIf(err, "Unable to write bucket notification configuration.")
 		return err
@@ -483,7 +483,7 @@ func persistListenerConfig(bucket string, lcfg []listenerConfig, obj ObjectLayer
 	}
 
 	// write object to path
-	_, err = obj.PutObject(minioMetaBucket, lcPath, hashReader, nil)
+	_, err = obj.PutObject(nil, minioMetaBucket, lcPath, hashReader, nil)
 	if err != nil {
 		errorIf(err, "Unable to write bucket listener configuration to object layer.")
 		return err
@@ -500,7 +500,7 @@ func removeNotificationConfig(bucket string, objAPI ObjectLayer) error {
 
 	ncPath := path.Join(bucketConfigPrefix, bucket, bucketNotificationConfig)
 
-	return objAPI.DeleteObject(minioMetaBucket, ncPath)
+	return objAPI.DeleteObject(nil, minioMetaBucket, ncPath)
 }
 
 // Remove listener configuration from storage layer. Used when a bucket is deleted.
@@ -508,7 +508,7 @@ func removeListenerConfig(bucket string, objAPI ObjectLayer) error {
 	// make the path
 	lcPath := path.Join(bucketConfigPrefix, bucket, bucketListenerConfig)
 
-	return objAPI.DeleteObject(minioMetaBucket, lcPath)
+	return objAPI.DeleteObject(nil, minioMetaBucket, lcPath)
 }
 
 // Loads both notification and listener config.
@@ -530,7 +530,7 @@ func loadNotificationAndListenerConfig(bucketName string, objAPI ObjectLayer) (n
 // loads all bucket notifications if present.
 func loadAllBucketNotifications(objAPI ObjectLayer) (map[string]*notificationConfig, map[string][]listenerConfig, error) {
 	// List buckets to proceed loading all notification configuration.
-	buckets, err := objAPI.ListBuckets()
+	buckets, err := objAPI.ListBuckets(nil)
 	if err != nil {
 		return nil, nil, err
 	}

@@ -48,7 +48,7 @@ func TestInitEventNotifierFaultyDisks(t *testing.T) {
 	}
 
 	bucketName := "bucket"
-	if err := obj.MakeBucketWithLocation(bucketName, ""); err != nil {
+	if err := obj.MakeBucketWithLocation(nil, bucketName, ""); err != nil {
 		t.Fatal("Unexpected error:", err)
 	}
 
@@ -65,7 +65,7 @@ func TestInitEventNotifierFaultyDisks(t *testing.T) {
 	size := int64(len([]byte(notificationXML)))
 	reader := bytes.NewReader([]byte(notificationXML))
 	bucketConfigPath := bucketConfigPrefix + "/" + bucketName + "/" + bucketNotificationConfig
-	if _, err := xl.PutObject(minioMetaBucket, bucketConfigPath, mustGetHashReader(t, reader, size, "", ""), nil); err != nil {
+	if _, err := xl.PutObject(nil, minioMetaBucket, bucketConfigPath, mustGetHashReader(t, reader, size, "", ""), nil); err != nil {
 		t.Fatal("Unexpected error:", err)
 	}
 
@@ -347,7 +347,7 @@ func TestInitEventNotifier(t *testing.T) {
 	}
 
 	// create bucket
-	if err := obj.MakeBucketWithLocation(bucketName, ""); err != nil {
+	if err := obj.MakeBucketWithLocation(nil, bucketName, ""); err != nil {
 		t.Fatal("Unexpected error:", err)
 	}
 
@@ -412,7 +412,7 @@ func TestListenBucketNotification(t *testing.T) {
 	objectName := "object"
 
 	// Create the bucket to listen on
-	if err := obj.MakeBucketWithLocation(bucketName, ""); err != nil {
+	if err := obj.MakeBucketWithLocation(nil, bucketName, ""); err != nil {
 		t.Fatal("Unexpected error:", err)
 	}
 
@@ -518,7 +518,7 @@ func TestAddRemoveBucketListenerConfig(t *testing.T) {
 
 	// Make a bucket to store topicConfigs.
 	randBucket := getRandomBucketName()
-	if err := obj.MakeBucketWithLocation(randBucket, ""); err != nil {
+	if err := obj.MakeBucketWithLocation(nil, randBucket, ""); err != nil {
 		t.Fatalf("Failed to make bucket %s", randBucket)
 	}
 

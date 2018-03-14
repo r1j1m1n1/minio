@@ -77,7 +77,7 @@ func (lc *localBucketMetaState) UpdateBucketPolicy(args *SetBucketPolicyPeerArgs
 	if objAPI == nil {
 		return errServerNotInitialized
 	}
-	return objAPI.RefreshBucketPolicy(args.Bucket)
+	return objAPI.RefreshBucketPolicy(nil, args.Bucket)
 }
 
 // localBucketMetaState.SendEvent - sends event to local event notifier via

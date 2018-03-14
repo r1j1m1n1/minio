@@ -80,6 +80,8 @@ func errAllowableObjectNotFound(bucket string, r *http.Request) APIErrorCode {
 // This implementation of the GET operation retrieves object. To use GET,
 // you must have READ access to the object.
 func (api objectAPIHandlers) GetObjectHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := newContext(r, "GetObject")
+
 	var object, bucket string
 	vars := mux.Vars(r)
 	bucket = vars["bucket"]
@@ -97,7 +99,7 @@ func (api objectAPIHandlers) GetObjectHandler(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	objInfo, err := objectAPI.GetObjectInfo(bucket, object)
+	objInfo, err := objectAPI.GetObjectInfo(ctx, bucket, object)
 	if err != nil {
 		apiErr := toAPIErrorCode(err)
 		if apiErr == ErrNoSuchKey {
@@ -168,7 +170,7 @@ func (api objectAPIHandlers) GetObjectHandler(w http.ResponseWriter, r *http.Req
 	httpWriter := ioutil.WriteOnClose(writer)
 
 	// Reads the object at startOffset and writes to httpWriter.
-	if err = objectAPI.GetObject(bucket, object, startOffset, length, httpWriter, objInfo.ETag); err != nil {
+	if err = objectAPI.GetObject(ctx, bucket, object, startOffset, length, httpWriter, objInfo.ETag); err != nil {
 		errorIf(err, "Unable to write to client.")
 		if !httpWriter.HasWritten() { // write error response only if no data has been written to client yet
 			writeErrorResponse(w, toAPIErrorCode(err), r.URL)
@@ -206,6 +208,8 @@ func (api objectAPIHandlers) GetObjectHandler(w http.ResponseWriter, r *http.Req
 // -----------
 // The HEAD operation retrieves metadata from an object without returning the object itself.
 func (api objectAPIHandlers) HeadObjectHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := newContext(r, "HeadObject")
+
 	var object, bucket string
 	vars := mux.Vars(r)
 	bucket = vars["bucket"]
@@ -222,7 +226,7 @@ func (api objectAPIHandlers) HeadObjectHandler(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	objInfo, err := objectAPI.GetObjectInfo(bucket, object)
+	objInfo, err := objectAPI.GetObjectInfo(ctx, bucket, object)
 	if err != nil {
 		apiErr := toAPIErrorCode(err)
 		if apiErr == ErrNoSuchKey {
@@ -309,6 +313,8 @@ func getCpObjMetadataFromHeader(header http.Header, userMeta map[string]string) 
 // This implementation of the PUT operation adds an object to a bucket
 // while reading the object from another source.
 func (api objectAPIHandlers) CopyObjectHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := newContext(r, "CopyObject")
+
 	vars := mux.Vars(r)
 	dstBucket := vars["bucket"]
 	dstObject := vars["object"]
@@ -347,7 +353,7 @@ func (api objectAPIHandlers) CopyObjectHandler(w http.ResponseWriter, r *http.Re
 	}
 
 	cpSrcDstSame := isStringEqual(pathJoin(srcBucket, srcObject), pathJoin(dstBucket, dstObject))
-	srcInfo, err := objectAPI.GetObjectInfo(srcBucket, srcObject)
+	srcInfo, err := objectAPI.GetObjectInfo(ctx, srcBucket, srcObject)
 	if err != nil {
 		writeErrorResponse(w, toAPIErrorCode(err), r.URL)
 		return
@@ -501,7 +507,7 @@ func (api objectAPIHandlers) CopyObjectHandler(w http.ResponseWriter, r *http.Re
 
 	// Copy source object to destination, if source and destination
 	// object is same then only metadata is updated.
-	objInfo, err := objectAPI.CopyObject(srcBucket, srcObject, dstBucket, dstObject, srcInfo)
+	objInfo, err := objectAPI.CopyObject(ctx, srcBucket, srcObject, dstBucket, dstObject, srcInfo)
 	if err != nil {
 		pipeWriter.CloseWithError(err)
 		writeErrorResponse(w, toAPIErrorCode(err), r.URL)
@@ -538,6 +544,8 @@ func (api objectAPIHandlers) CopyObjectHandler(w http.ResponseWriter, r *http.Re
 // ----------
 // This implementation of the PUT operation adds an object to a bucket.
 func (api objectAPIHandlers) PutObjectHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := newContext(r, "PutObject")
+
 	objectAPI := api.ObjectAPI()
 	if objectAPI == nil {
 		writeErrorResponse(w, ErrServerNotInitialized, r.URL)
@@ -683,7 +691,7 @@ func (api objectAPIHandlers) PutObjectHandler(w http.ResponseWriter, r *http.Req
 		}
 	}
 
-	objInfo, err := objectAPI.PutObject(bucket, object, hashReader, metadata)
+	objInfo, err := objectAPI.PutObject(ctx, bucket, object, hashReader, metadata)
 	if err != nil {
 		writeErrorResponse(w, toAPIErrorCode(err), r.URL)
 		return
@@ -721,6 +729,8 @@ func (api objectAPIHandlers) PutObjectHandler(w http.ResponseWriter, r *http.Req
 
 // NewMultipartUploadHandler - New multipart upload.
 func (api objectAPIHandlers) NewMultipartUploadHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := newContext(r, "NewMultipartUpload")
+
 	var object, bucket string
 	vars := mux.Vars(r)
 	bucket = vars["bucket"]
@@ -780,7 +790,7 @@ func (api objectAPIHandlers) NewMultipartUploadHandler(w http.ResponseWriter, r 
 		metadata[k] = v
 	}
 
-	uploadID, err := objectAPI.NewMultipartUpload(bucket, object, metadata)
+	uploadID, err := objectAPI.NewMultipartUpload(ctx, bucket, object, metadata)
 	if err != nil {
 		writeErrorResponse(w, toAPIErrorCode(err), r.URL)
 		return
@@ -795,6 +805,8 @@ func (api objectAPIHandlers) NewMultipartUploadHandler(w http.ResponseWriter, r 
 
 // CopyObjectPartHandler - uploads a part by copying data from an existing object as data source.
 func (api objectAPIHandlers) CopyObjectPartHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := newContext(r, "CopyObjectPart")
+
 	vars := mux.Vars(r)
 	dstBucket := vars["bucket"]
 	dstObject := vars["object"]
@@ -839,7 +851,7 @@ func (api objectAPIHandlers) CopyObjectPartHandler(w http.ResponseWriter, r *htt
 		return
 	}
 
-	srcInfo, err := objectAPI.GetObjectInfo(srcBucket, srcObject)
+	srcInfo, err := objectAPI.GetObjectInfo(ctx, srcBucket, srcObject)
 	if err != nil {
 		writeErrorResponse(w, toAPIErrorCode(err), r.URL)
 		return
@@ -897,7 +909,7 @@ func (api objectAPIHandlers) CopyObjectPartHandler(w http.ResponseWriter, r *htt
 	}
 	if objectAPI.IsEncryptionSupported() {
 		var li ListPartsInfo
-		li, err = objectAPI.ListObjectParts(dstBucket, dstObject, uploadID, 0, 1)
+		li, err = objectAPI.ListObjectParts(ctx, dstBucket, dstObject, uploadID, 0, 1)
 		if err != nil {
 			pipeWriter.CloseWithError(err)
 			writeErrorResponse(w, toAPIErrorCode(err), r.URL)
@@ -962,7 +974,7 @@ func (api objectAPIHandlers) CopyObjectPartHandler(w http.ResponseWriter, r *htt
 
 	// Copy source object to destination, if source and destination
 	// object is same then only metadata is updated.
-	partInfo, err := objectAPI.CopyObjectPart(srcBucket, srcObject, dstBucket,
+	partInfo, err := objectAPI.CopyObjectPart(ctx, srcBucket, srcObject, dstBucket,
 		dstObject, uploadID, partID, startOffset, length, srcInfo)
 	if err != nil {
 		writeErrorResponse(w, toAPIErrorCode(err), r.URL)
@@ -981,6 +993,8 @@ func (api objectAPIHandlers) CopyObjectPartHandler(w http.ResponseWriter, r *htt
 
 // PutObjectPartHandler - uploads an incoming part for an ongoing multipart operation.
 func (api objectAPIHandlers) PutObjectPartHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := newContext(r, "PutObjectPart")
+
 	vars := mux.Vars(r)
 	bucket := vars["bucket"]
 	object := vars["object"]
@@ -1096,7 +1110,7 @@ func (api objectAPIHandlers) PutObjectPartHandler(w http.ResponseWriter, r *http
 
 	if objectAPI.IsEncryptionSupported() {
 		var li ListPartsInfo
-		li, err = objectAPI.ListObjectParts(bucket, object, uploadID, 0, 1)
+		li, err = objectAPI.ListObjectParts(ctx, bucket, object, uploadID, 0, 1)
 		if err != nil {
 			writeErrorResponse(w, toAPIErrorCode(err), r.URL)
 			return
@@ -1143,7 +1157,7 @@ func (api objectAPIHandlers) PutObjectPartHandler(w http.ResponseWriter, r *http
 		}
 	}
 
-	partInfo, err := objectAPI.PutObjectPart(bucket, object, uploadID, partID, hashReader)
+	partInfo, err := objectAPI.PutObjectPart(ctx, bucket, object, uploadID, partID, hashReader)
 	if err != nil {
 		// Verify if the underlying error is signature mismatch.
 		writeErrorResponse(w, toAPIErrorCode(err), r.URL)
@@ -1158,6 +1172,8 @@ func (api objectAPIHandlers) PutObjectPartHandler(w http.ResponseWriter, r *http
 
 // AbortMultipartUploadHandler - Abort multipart upload
 func (api objectAPIHandlers) AbortMultipartUploadHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := newContext(r, "AbortMultipartUpload")
+
 	vars := mux.Vars(r)
 	bucket := vars["bucket"]
 	object := vars["object"]
@@ -1174,7 +1190,7 @@ func (api objectAPIHandlers) AbortMultipartUploadHandler(w http.ResponseWriter, 
 	}
 
 	uploadID, _, _, _ := getObjectResources(r.URL.Query())
-	if err := objectAPI.AbortMultipartUpload(bucket, object, uploadID); err != nil {
+	if err := objectAPI.AbortMultipartUpload(ctx, bucket, object, uploadID); err != nil {
 		errorIf(err, "AbortMultipartUpload failed")
 		writeErrorResponse(w, toAPIErrorCode(err), r.URL)
 		return
@@ -1184,6 +1200,8 @@ func (api objectAPIHandlers) AbortMultipartUploadHandler(w http.ResponseWriter, 
 
 // ListObjectPartsHandler - List object parts
 func (api objectAPIHandlers) ListObjectPartsHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := newContext(r, "ListObjectParts")
+
 	vars := mux.Vars(r)
 	bucket := vars["bucket"]
 	object := vars["object"]
@@ -1208,7 +1226,7 @@ func (api objectAPIHandlers) ListObjectPartsHandler(w http.ResponseWriter, r *ht
 		writeErrorResponse(w, ErrInvalidMaxParts, r.URL)
 		return
 	}
-	listPartsInfo, err := objectAPI.ListObjectParts(bucket, object, uploadID, partNumberMarker, maxParts)
+	listPartsInfo, err := objectAPI.ListObjectParts(ctx, bucket, object, uploadID, partNumberMarker, maxParts)
 	if err != nil {
 		writeErrorResponse(w, toAPIErrorCode(err), r.URL)
 		return
@@ -1222,6 +1240,8 @@ func (api objectAPIHandlers) ListObjectPartsHandler(w http.ResponseWriter, r *ht
 
 // CompleteMultipartUploadHandler - Complete multipart upload.
 func (api objectAPIHandlers) CompleteMultipartUploadHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := newContext(r, "CompleteMultipartUpload")
+
 	vars := mux.Vars(r)
 	bucket := vars["bucket"]
 	object := vars["object"]
@@ -1266,7 +1286,7 @@ func (api objectAPIHandlers) CompleteMultipartUploadHandler(w http.ResponseWrite
 		completeParts = append(completeParts, part)
 	}
 
-	objInfo, err := objectAPI.CompleteMultipartUpload(bucket, object, uploadID, completeParts)
+	objInfo, err := objectAPI.CompleteMultipartUpload(ctx, bucket, object, uploadID, completeParts)
 	if err != nil {
 		err = errors.Cause(err)
 		switch oErr := err.(type) {
@@ -1318,6 +1338,8 @@ func (api objectAPIHandlers) CompleteMultipartUploadHandler(w http.ResponseWrite
 
 // DeleteObjectHandler - delete an object
 func (api objectAPIHandlers) DeleteObjectHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := newContext(r, "DeleteObject")
+
 	vars := mux.Vars(r)
 	bucket := vars["bucket"]
 	object := vars["object"]
@@ -1337,7 +1359,7 @@ func (api objectAPIHandlers) DeleteObjectHandler(w http.ResponseWriter, r *http.
 	// Ignore delete object errors while replying to client, since we are
 	// suppposed to reply only 204. Additionally log the error for
 	// investigation.
-	if err := deleteObject(objectAPI, bucket, object, r); err != nil {
+	if err := deleteObject(ctx, objectAPI, bucket, object, r); err != nil {
 		errorIf(err, "Unable to delete an object %s", pathJoin(bucket, object))
 	}
 	writeSuccessNoContent(w)

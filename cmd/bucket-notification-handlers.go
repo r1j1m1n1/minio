@@ -43,6 +43,7 @@ const (
 // not enabled on the bucket, the operation returns an empty
 // NotificationConfiguration element.
 func (api objectAPIHandlers) GetBucketNotificationHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := newContext(r, "GetBucketNotification")
 
 	objAPI := api.ObjectAPI()
 	if objAPI == nil {
@@ -62,7 +63,7 @@ func (api objectAPIHandlers) GetBucketNotificationHandler(w http.ResponseWriter,
 	vars := mux.Vars(r)
 	bucket := vars["bucket"]
 
-	_, err := objAPI.GetBucketInfo(bucket)
+	_, err := objAPI.GetBucketInfo(ctx, bucket)
 	if err != nil {
 		writeErrorResponse(w, toAPIErrorCode(err), r.URL)
 		return
@@ -101,6 +102,7 @@ func (api objectAPIHandlers) GetBucketNotificationHandler(w http.ResponseWriter,
 // By default, your bucket has no event notifications configured. That is,
 // the notification configuration will be an empty NotificationConfiguration.
 func (api objectAPIHandlers) PutBucketNotificationHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := newContext(r, "PutBucketNotification")
 
 	objectAPI := api.ObjectAPI()
 	if objectAPI == nil {
@@ -120,7 +122,7 @@ func (api objectAPIHandlers) PutBucketNotificationHandler(w http.ResponseWriter,
 	vars := mux.Vars(r)
 	bucket := vars["bucket"]
 
-	_, err := objectAPI.GetBucketInfo(bucket)
+	_, err := objectAPI.GetBucketInfo(ctx, bucket)
 	if err != nil {
 		writeErrorResponse(w, toAPIErrorCode(err), r.URL)
 		return
@@ -298,6 +300,8 @@ func (l *listenChan) waitForListener(w http.ResponseWriter) {
 
 // ListenBucketNotificationHandler - list bucket notifications.
 func (api objectAPIHandlers) ListenBucketNotificationHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := newContext(r, "ListenBucketNotification")
+
 	// Validate if bucket exists.
 	objAPI := api.ObjectAPI()
 	if objAPI == nil {
@@ -337,7 +341,7 @@ func (api objectAPIHandlers) ListenBucketNotificationHandler(w http.ResponseWrit
 		}
 	}
 
-	_, err := objAPI.GetBucketInfo(bucket)
+	_, err := objAPI.GetBucketInfo(ctx, bucket)
 	if err != nil {
 		writeErrorResponse(w, toAPIErrorCode(err), r.URL)
 		return
