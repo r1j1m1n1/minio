@@ -50,8 +50,8 @@ func TestXLCleanupMultipartUploadsInRoutine(t *testing.T) {
 	bucketName := "bucket"
 	objectName := "object"
 
-	obj.MakeBucketWithLocation(bucketName, "")
-	uploadID, err := obj.NewMultipartUpload(bucketName, objectName, nil)
+	obj.MakeBucketWithLocation(nil, bucketName, "")
+	uploadID, err := obj.NewMultipartUpload(nil, bucketName, objectName, nil)
 	if err != nil {
 		t.Fatal("Unexpected err: ", err)
 	}
@@ -66,7 +66,7 @@ func TestXLCleanupMultipartUploadsInRoutine(t *testing.T) {
 	globalServiceDoneCh <- struct{}{}
 
 	// Check if upload id was already purged.
-	if err = obj.AbortMultipartUpload(bucketName, objectName, uploadID); err != nil {
+	if err = obj.AbortMultipartUpload(nil, bucketName, objectName, uploadID); err != nil {
 		err = errors.Cause(err)
 		if _, ok := err.(InvalidUploadID); !ok {
 			t.Fatal("Unexpected err: ", err)
@@ -100,8 +100,8 @@ func TestXLCleanupMultipartUpload(t *testing.T) {
 	bucketName := "bucket"
 	objectName := "object"
 
-	obj.MakeBucketWithLocation(bucketName, "")
-	uploadID, err := obj.NewMultipartUpload(bucketName, objectName, nil)
+	obj.MakeBucketWithLocation(nil, bucketName, "")
+	uploadID, err := obj.NewMultipartUpload(nil, bucketName, objectName, nil)
 	if err != nil {
 		t.Fatal("Unexpected err: ", err)
 	}
@@ -111,7 +111,7 @@ func TestXLCleanupMultipartUpload(t *testing.T) {
 	}
 
 	// Check if upload id was already purged.
-	if err = obj.AbortMultipartUpload(bucketName, objectName, uploadID); err != nil {
+	if err = obj.AbortMultipartUpload(nil, bucketName, objectName, uploadID); err != nil {
 		err = errors.Cause(err)
 		if _, ok := err.(InvalidUploadID); !ok {
 			t.Fatal("Unexpected err: ", err)
@@ -136,7 +136,7 @@ func TestUpdateUploadJSON(t *testing.T) {
 	defer removeRoots(fsDirs)
 
 	bucket, object := "bucket", "object"
-	err = obj.MakeBucketWithLocation(bucket, "")
+	err = obj.MakeBucketWithLocation(nil, bucket, "")
 	if err != nil {
 		t.Fatal(err)
 	}
