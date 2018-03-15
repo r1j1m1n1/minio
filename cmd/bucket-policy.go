@@ -123,7 +123,6 @@ func readBucketPolicyJSON(bucket string, objAPI ObjectLayer) (bucketPolicyReader
 		if isErrObjectNotFound(err) || isErrIncompleteBody(err) {
 			return nil, PolicyNotFound{Bucket: bucket}
 		}
-		errorIf(err, "Unable to load policy for the bucket %s.", bucket)
 		return nil, errors.Cause(err)
 	}
 
@@ -178,7 +177,6 @@ func writeBucketPolicy(bucket string, objAPI ObjectLayer, bpy policy.BucketAcces
 	}
 
 	if _, err = objAPI.PutObject(nil, minioMetaBucket, policyPath, hashReader, nil); err != nil {
-		errorIf(err, "Unable to set policy for the bucket %s", bucket)
 		return errors.Cause(err)
 	}
 	return nil

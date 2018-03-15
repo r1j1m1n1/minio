@@ -215,11 +215,7 @@ func cleanupStaleMultipartUploads(cleanupInterval, expiry time.Duration, obj Obj
 			ticker.Stop()
 			return
 		case <-ticker.C:
-			bucketInfos, err := obj.ListBuckets(nil)
-			if err != nil {
-				errorIf(err, "Unable to list buckets")
-				continue
-			}
+			bucketInfos, _ := obj.ListBuckets(nil)
 			for _, bucketInfo := range bucketInfos {
 				cleanupStaleMultipartUpload(bucketInfo.Name, expiry, obj, listFn)
 			}

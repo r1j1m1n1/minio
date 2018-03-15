@@ -374,7 +374,6 @@ func loadNotificationConfig(bucket string, objAPI ObjectLayer) (*notificationCon
 		if isErrObjectNotFound(err) || isErrIncompleteBody(err) {
 			return nil, errors.Trace(errNoSuchNotifications)
 		}
-		errorIf(err, "Unable to load bucket-notification for bucket %s", bucket)
 		// Returns error for other errors.
 		return nil, err
 	}
@@ -418,7 +417,6 @@ func loadListenerConfig(bucket string, objAPI ObjectLayer) ([]listenerConfig, er
 		if isErrObjectNotFound(err) || isErrIncompleteBody(err) {
 			return nil, errors.Trace(errNoSuchNotifications)
 		}
-		errorIf(err, "Unable to load bucket-listeners for bucket %s", bucket)
 		// Returns error for other errors.
 		return nil, err
 	}
@@ -458,7 +456,6 @@ func persistNotificationConfig(bucket string, ncfg *notificationConfig, obj Obje
 	}
 	_, err = obj.PutObject(nil, minioMetaBucket, ncPath, hashReader, nil)
 	if err != nil {
-		errorIf(err, "Unable to write bucket notification configuration.")
 		return err
 	}
 	return nil
@@ -485,7 +482,6 @@ func persistListenerConfig(bucket string, lcfg []listenerConfig, obj ObjectLayer
 	// write object to path
 	_, err = obj.PutObject(nil, minioMetaBucket, lcPath, hashReader, nil)
 	if err != nil {
-		errorIf(err, "Unable to write bucket listener configuration to object layer.")
 		return err
 	}
 	return nil
@@ -758,7 +754,6 @@ func initEventNotifier(objAPI ObjectLayer) error {
 	// Read all saved bucket notifications.
 	nConfigs, lConfigs, err := loadAllBucketNotifications(objAPI)
 	if err != nil {
-		errorIf(err, "Error loading bucket notifications - %v", err)
 		return err
 	}
 
@@ -777,7 +772,7 @@ func initEventNotifier(objAPI ObjectLayer) error {
 				listener.TargetServer,
 			)
 			if err != nil {
-				errorIf(err, "Unable to initialize listener target logger.")
+				errorIf(errors.Trace(err), "Unable to initialize listener target logger.")
 				//TODO: improve error
 				return fmt.Errorf("Error initializing listner target logger - %v", err)
 			}

@@ -72,7 +72,6 @@ func (api objectAPIHandlers) GetBucketNotificationHandler(w http.ResponseWriter,
 	// Attempt to successfully load notification config.
 	nConfig, err := loadNotificationConfig(bucket, objAPI)
 	if err != nil && errors.Cause(err) != errNoSuchNotifications {
-		errorIf(err, "Unable to read notification configuration.")
 		writeErrorResponse(w, toAPIErrorCode(err), r.URL)
 		return
 	}
