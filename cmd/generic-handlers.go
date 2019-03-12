@@ -411,7 +411,7 @@ func setIgnoreResourcesHandler(h http.Handler) http.Handler {
 	return resourceHandler{h}
 }
 
-// Checks requests for not implemented Bucket resources
+// ignoreNotImplementedBucketResources: Checks requests for not implemented Bucket resources
 func ignoreNotImplementedBucketResources(req *http.Request) bool {
 	for name := range req.URL.Query() {
 		// Enable GetBucketACL, GetBucketCors, GetBucketWebsite,
