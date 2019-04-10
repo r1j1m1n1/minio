@@ -28,7 +28,7 @@ import (
 type lockRequesterInfo struct {
 	Writer          bool      // Bool whether write or read lock.
 	Node            string    // Network address of client claiming lock.
-	ServiceEndpoint string    // RPC path of client claiming lock.
+	ServiceEndpoint string    // REST path of client claiming lock.
 	UID             string    // UID to uniquely identify request of client.
 	Timestamp       time.Time // Timestamp set at the time of initialization.
 	TimeLastCheck   time.Time // Timestamp for last check of validity of lock.

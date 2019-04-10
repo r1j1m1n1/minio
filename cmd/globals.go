@@ -20,6 +20,7 @@ import (
 	"crypto/x509"
 	"fmt"
 	"os"
+	"sync"
 	"time"
 
 	isatty "github.com/mattn/go-isatty"
@@ -257,6 +258,11 @@ var (
 
 	// GlobalGatewaySSE sse options
 	GlobalGatewaySSE gatewaySSE
+
+	// variable to store API stats on each node
+	globalAPIStats = make(map[string]*APIStatsData)
+
+	globalAPIStatsMu sync.RWMutex
 
 	// Add new variable global values here.
 )

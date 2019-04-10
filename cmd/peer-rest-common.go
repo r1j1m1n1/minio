@@ -37,6 +37,7 @@ const (
 	peerRESTMethodReloadFormat             = "reloadformat"
 	peerRESTMethodTargetExists             = "targetexists"
 	peerRESTMethodSendEvent                = "sendevent"
+	peerRESTMethodGetAPIStats              = "apistats"
 )
 
 const (

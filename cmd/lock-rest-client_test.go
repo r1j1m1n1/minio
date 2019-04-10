@@ -23,7 +23,7 @@ import (
 	xnet "github.com/minio/minio/pkg/net"
 )
 
-// Tests lock rpc client.
+// Tests lock REST client.
 func TestLockRESTlient(t *testing.T) {
 	host, err := xnet.ParseHost("localhost:9000")
 	if err != nil {

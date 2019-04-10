@@ -71,6 +71,79 @@ func setHeadGetRespHeaders(w http.ResponseWriter, reqParams url.Values) {
 	}
 }
 
+// APIInfo ...
+type APIInfo struct {
+	Success  bool
+	BytesIn  int64
+	BytesOut int64
+}
+
+// apiStatsFunc updates the globalAPIStats variable with API Stats information.
+func apiStatsFunc(apiName string, apiInfo *APIInfo, startTime time.Time) func() {
+	return func() {
+		globalAPIStatsMu.Lock()
+		defer globalAPIStatsMu.Unlock()
+		if globalAPIStats[apiName] != nil {
+			apiStatsData := globalAPIStats[apiName]
+
+			latency := UTCNow().Sub(startTime)
+			if latency < apiStatsData.MinLatency {
+				apiStatsData.MinLatency = latency
+			} else if latency > apiStatsData.MaxLatency {
+				apiStatsData.MaxLatency = latency
+			}
+
+			apiStatsData.AvgLatency = (apiStatsData.AvgLatency*time.Duration(apiStatsData.Requests) + latency) / time.Duration(apiStatsData.Requests+1)
+
+			if !apiInfo.Success {
+				return
+			}
+
+			if apiInfo.BytesIn < apiStatsData.MinBytesIn {
+				apiStatsData.MinBytesIn = apiInfo.BytesIn
+			} else if apiInfo.BytesIn > apiStatsData.MaxBytesIn {
+				apiStatsData.MaxBytesIn = apiInfo.BytesIn
+			}
+
+			apiStatsData.AvgBytesIn = (apiStatsData.AvgBytesIn*(apiStatsData.Requests-apiStatsData.Failures) + apiInfo.BytesIn) / (apiStatsData.Requests + 1 - apiStatsData.Failures)
+
+			if apiInfo.BytesOut < apiStatsData.MinBytesOut {
+				apiStatsData.MinBytesOut = apiInfo.BytesOut
+			} else if apiInfo.BytesOut > apiStatsData.MaxBytesOut {
+				apiStatsData.MaxBytesOut = apiInfo.BytesOut
+			}
+
+			apiStatsData.AvgBytesOut = (apiStatsData.AvgBytesOut*(apiStatsData.Requests-apiStatsData.Failures) + apiInfo.BytesOut) / (apiStatsData.Requests + 1 - apiStatsData.Failures)
+
+			apiStatsData.Requests++
+			if !apiInfo.Success {
+				apiStatsData.Failures++
+			}
+
+		} else {
+			latency := UTCNow().Sub(startTime)
+			failure := 1
+			if apiInfo.Success {
+				failure = 0
+			}
+			apiStatsData := &APIStatsData{
+				Requests:    1,
+				Failures:    int64(failure),
+				AvgLatency:  latency,
+				MaxLatency:  latency,
+				MinLatency:  latency,
+				AvgBytesIn:  apiInfo.BytesIn,
+				AvgBytesOut: apiInfo.BytesOut,
+				MaxBytesIn:  apiInfo.BytesIn,
+				MaxBytesOut: apiInfo.BytesOut,
+				MinBytesIn:  apiInfo.BytesIn,
+				MinBytesOut: apiInfo.BytesOut,
+			}
+			globalAPIStats[apiName] = apiStatsData
+		}
+	}
+}
+
 // SelectObjectContentHandler - GET Object?select
 // ----------
 // This implementation of the GET operation retrieves object content based
@@ -240,7 +313,9 @@ func (api objectAPIHandlers) GetObjectHandler(w http.ResponseWriter, r *http.Req
 	ctx := newContext(r, w, "GetObject")
 
 	defer logger.AuditLog(w, r, "GetObject", mustGetClaimsFromToken(r))
-
+	apiInfo := APIInfo{}
+	updateAPIStats := apiStatsFunc("GetObject", &apiInfo, UTCNow())
+	defer updateAPIStats()
 	objectAPI := api.ObjectAPI()
 	if objectAPI == nil {
 		writeErrorResponse(ctx, w, errorCodes.ToAPIErr(ErrServerNotInitialized), r.URL, guessIsBrowserReq(r))
@@ -393,7 +468,14 @@ func (api objectAPIHandlers) GetObjectHandler(w http.ResponseWriter, r *http.Req
 			return
 		}
 	}
+	apiInfo.Success = true
 
+	length, err := rs.GetLength(objInfo.Size)
+	if err != nil {
+		apiInfo.BytesOut = objInfo.Size
+	} else {
+		apiInfo.BytesOut = length
+	}
 	// Notify object accessed via a GET request.
 	sendEvent(eventArgs{
 		EventName:    event.ObjectAccessedGet,
@@ -413,6 +495,10 @@ func (api objectAPIHandlers) HeadObjectHandler(w http.ResponseWriter, r *http.Re
 	ctx := newContext(r, w, "HeadObject")
 
 	defer logger.AuditLog(w, r, "HeadObject", mustGetClaimsFromToken(r))
+
+	apiInfo := APIInfo{}
+	updateAPIStats := apiStatsFunc("HeadObject", &apiInfo, UTCNow())
+	defer updateAPIStats()
 
 	objectAPI := api.ObjectAPI()
 	if objectAPI == nil {
@@ -547,6 +633,8 @@ func (api objectAPIHandlers) HeadObjectHandler(w http.ResponseWriter, r *http.Re
 		w.WriteHeader(http.StatusOK)
 	}
 
+	apiInfo.Success = true
+
 	// Notify object accessed via a HEAD request.
 	sendEvent(eventArgs{
 		EventName:    event.ObjectAccessedHead,
@@ -624,6 +712,10 @@ func (api objectAPIHandlers) CopyObjectHandler(w http.ResponseWriter, r *http.Re
 	ctx := newContext(r, w, "CopyObject")
 
 	defer logger.AuditLog(w, r, "CopyObject", mustGetClaimsFromToken(r))
+
+	apiInfo := APIInfo{}
+	updateAPIStats := apiStatsFunc("CopyObject", &apiInfo, UTCNow())
+	defer updateAPIStats()
 
 	objectAPI := api.ObjectAPI()
 	if objectAPI == nil {
@@ -1021,6 +1113,7 @@ func (api objectAPIHandlers) CopyObjectHandler(w http.ResponseWriter, r *http.Re
 		objInfo.Size = actualSize
 	}
 
+	apiInfo.Success = true
 	// Notify object created event.
 	sendEvent(eventArgs{
 		EventName:    event.ObjectCreatedCopy,
@@ -1045,6 +1138,10 @@ func (api objectAPIHandlers) PutObjectHandler(w http.ResponseWriter, r *http.Req
 	ctx := newContext(r, w, "PutObject")
 
 	defer logger.AuditLog(w, r, "PutObject", mustGetClaimsFromToken(r))
+
+	apiInfo := APIInfo{}
+	updateAPIStats := apiStatsFunc("PutObject", &apiInfo, UTCNow())
+	defer updateAPIStats()
 
 	objectAPI := api.ObjectAPI()
 	if objectAPI == nil {
@@ -1280,6 +1377,9 @@ func (api objectAPIHandlers) PutObjectHandler(w http.ResponseWriter, r *http.Req
 	}
 
 	writeSuccessResponseHeadersOnly(w)
+
+	apiInfo.Success = true
+	apiInfo.BytesIn = objInfo.Size
 
 	// Notify object created event.
 	sendEvent(eventArgs{

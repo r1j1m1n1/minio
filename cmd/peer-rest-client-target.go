@@ -18,7 +18,7 @@ package cmd
 
 import "github.com/minio/minio/pkg/event"
 
-// PeerRESTClientTarget - RPCClient is an event.Target which sends event to target of remote peer.
+// PeerRESTClientTarget - RESTClient is an event.Target which sends event to target of remote peer.
 type PeerRESTClientTarget struct {
 	id             event.TargetID
 	remoteTargetID event.TargetID
@@ -41,7 +41,7 @@ func (target *PeerRESTClientTarget) Send(eventKey string) error {
 	return nil
 }
 
-// sends event to remote peer by making RPC call.
+// sends event to remote peer by making REST call.
 func (target *PeerRESTClientTarget) send(eventData event.Event) error {
 	return target.restClient.SendEvent(target.bucketName, target.id, target.remoteTargetID, eventData)
 }
@@ -51,7 +51,7 @@ func (target *PeerRESTClientTarget) Close() error {
 	return nil
 }
 
-// NewPeerRESTClientTarget - creates RPCClient target with given target ID available in remote peer.
+// NewPeerRESTClientTarget - creates RESTClient target with given target ID available in remote peer.
 func NewPeerRESTClientTarget(bucketName string, targetID event.TargetID, restClient *peerRESTClient) *PeerRESTClientTarget {
 	return &PeerRESTClientTarget{
 		id:             event.TargetID{ID: targetID.ID, Name: targetID.Name + "+" + mustGetUUID()},

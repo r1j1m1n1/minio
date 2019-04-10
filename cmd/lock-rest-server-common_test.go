@@ -37,7 +37,7 @@ func createLockTestServer(t *testing.T) (string, *lockRESTServer, string) {
 	locker := &lockRESTServer{
 		ll: localLocker{
 			mutex:           sync.Mutex{},
-			serviceEndpoint: "rpc-path",
+			serviceEndpoint: "rest-path",
 			lockMap:         make(map[string][]lockRequesterInfo),
 		},
 	}
@@ -50,14 +50,14 @@ func createLockTestServer(t *testing.T) (string, *lockRESTServer, string) {
 }
 
 // Test function to remove lock entries from map only in case they still exist based on name & uid combination
-func TestLockRpcServerRemoveEntryIfExists(t *testing.T) {
+func TestLockRestServerRemoveEntryIfExists(t *testing.T) {
 	testPath, locker, _ := createLockTestServer(t)
 	defer os.RemoveAll(testPath)
 
 	lri := lockRequesterInfo{
 		Writer:          false,
 		Node:            "host",
-		ServiceEndpoint: "rpc-path",
+		ServiceEndpoint: "rest-path",
 		UID:             "0123-4567",
 		Timestamp:       UTCNow(),
 		TimeLastCheck:   UTCNow(),
@@ -87,14 +87,14 @@ func TestLockRpcServerRemoveEntryIfExists(t *testing.T) {
 }
 
 // Test function to remove lock entries from map based on name & uid combination
-func TestLockRpcServerRemoveEntry(t *testing.T) {
+func TestLockRESTServerRemoveEntry(t *testing.T) {
 	testPath, locker, _ := createLockTestServer(t)
 	defer os.RemoveAll(testPath)
 
 	lockRequesterInfo1 := lockRequesterInfo{
 		Writer:          true,
 		Node:            "host",
-		ServiceEndpoint: "rpc-path",
+		ServiceEndpoint: "rest-path",
 		UID:             "0123-4567",
 		Timestamp:       UTCNow(),
 		TimeLastCheck:   UTCNow(),
@@ -102,7 +102,7 @@ func TestLockRpcServerRemoveEntry(t *testing.T) {
 	lockRequesterInfo2 := lockRequesterInfo{
 		Writer:          true,
 		Node:            "host",
-		ServiceEndpoint: "rpc-path",
+		ServiceEndpoint: "rest-path",
 		UID:             "89ab-cdef",
 		Timestamp:       UTCNow(),
 		TimeLastCheck:   UTCNow(),
@@ -142,7 +142,7 @@ func TestLockRpcServerRemoveEntry(t *testing.T) {
 }
 
 // Tests function returning long lived locks.
-func TestLockRpcServerGetLongLivedLocks(t *testing.T) {
+func TestLockRESTServerGetLongLivedLocks(t *testing.T) {
 	ut := UTCNow()
 	// Collection of test cases for verifying returning valid long lived locks.
 	testCases := []struct {

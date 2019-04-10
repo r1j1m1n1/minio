@@ -65,11 +65,11 @@ func (sys *NotificationSys) GetARNList() []string {
 
 // NotificationPeerErr returns error associated for a remote peer.
 type NotificationPeerErr struct {
-	Host xnet.Host // Remote host on which the rpc call was initiated
-	Err  error     // Error returned by the remote peer for an rpc call
+	Host xnet.Host // Remote host on which the REST call was initiated
+	Err  error     // Error returned by the remote peer for an REST call
 }
 
-// DeleteBucket - calls DeleteBucket RPC call on all peers.
+// DeleteBucket - calls DeleteBucket REST call on all peers.
 func (sys *NotificationSys) DeleteBucket(ctx context.Context, bucketName string) {
 	go func() {
 		var wg sync.WaitGroup
@@ -156,7 +156,7 @@ func (sys *NotificationSys) ReloadFormat(dryRun bool) []NotificationPeerErr {
 	return ng.Wait()
 }
 
-// LoadUsers - calls LoadUsers RPC call on all peers.
+// LoadUsers - calls LoadUsers REST call on all peers.
 func (sys *NotificationSys) LoadUsers() []NotificationPeerErr {
 	ng := WithNPeers(len(sys.peerClients))
 	for idx, client := range sys.peerClients {
@@ -169,7 +169,7 @@ func (sys *NotificationSys) LoadUsers() []NotificationPeerErr {
 	return ng.Wait()
 }
 
-// StartProfiling - start profiling on remote peers, by initiating a remote RPC.
+// StartProfiling - start profiling on remote peers, by initiating a remote REST.
 func (sys *NotificationSys) StartProfiling(profiler string) []NotificationPeerErr {
 	ng := WithNPeers(len(sys.peerClients))
 	for idx, client := range sys.peerClients {
@@ -278,7 +278,7 @@ func (sys *NotificationSys) DownloadProfilingData(ctx context.Context, writer io
 	return profilingDataFound
 }
 
-// SignalService - calls signal service RPC call on all peers.
+// SignalService - calls signal service REST call on all peers.
 func (sys *NotificationSys) SignalService(sig serviceSignal) []NotificationPeerErr {
 	ng := WithNPeers(len(sys.peerClients))
 	for idx, client := range sys.peerClients {
@@ -293,7 +293,7 @@ func (sys *NotificationSys) SignalService(sig serviceSignal) []NotificationPeerE
 	return ng.Wait()
 }
 
-// ServerInfo - calls ServerInfo RPC call on all peers.
+// ServerInfo - calls ServerInfo REST call on all peers.
 func (sys *NotificationSys) ServerInfo(ctx context.Context) []ServerInfo {
 	serverInfo := make([]ServerInfo, len(sys.peerClients))
 	var wg sync.WaitGroup
@@ -336,7 +336,47 @@ func (sys *NotificationSys) ServerInfo(ctx context.Context) []ServerInfo {
 	return serverInfo
 }
 
-// GetLocks - makes GetLocks RPC call on all peers.
+// GetAPIStats - makes API Stats REST call on all peers.
+func (sys *NotificationSys) GetAPIStats(ctx context.Context) []*APIStats {
+
+	apiStatsResp := make([]*APIStats, len(sys.peerClients))
+	var wg sync.WaitGroup
+	for index, client := range sys.peerClients {
+		if client == nil {
+			continue
+		}
+		wg.Add(1)
+		go func(idx int, client *peerRESTClient) {
+			defer wg.Done()
+			// Try to fetch serverInfo remotely in three attempts.
+			for i := 0; i < 3; i++ {
+				serverAPIStatsResp, err := client.GetAPIStats()
+				if err == nil {
+					apiStatsResp[idx] = &APIStats{
+						Addr: client.host.String(),
+						Data: serverAPIStatsResp,
+					}
+					return
+				}
+
+				// Last iteration log the error.
+				if i == 2 {
+					reqInfo := (&logger.ReqInfo{}).AppendTags("peerAddress", client.host.String())
+					ctx := logger.SetReqInfo(ctx, reqInfo)
+					logger.LogOnceIf(ctx, err, client.host.String())
+				}
+				// Wait for one second and no need wait after last attempt.
+				if i < 2 {
+					time.Sleep(1 * time.Second)
+				}
+			}
+		}(index, client)
+	}
+	wg.Wait()
+	return apiStatsResp
+}
+
+// GetLocks - makes GetLocks REST call on all peers.
 func (sys *NotificationSys) GetLocks(ctx context.Context) []*PeerLocks {
 
 	locksResp := make([]*PeerLocks, len(sys.peerClients))
@@ -348,7 +388,7 @@ func (sys *NotificationSys) GetLocks(ctx context.Context) []*PeerLocks {
 		wg.Add(1)
 		go func(idx int, client *peerRESTClient) {
 			defer wg.Done()
-			// Try to fetch serverInfo remotely in three attempts.
+			// Try to fetch server locks in use remotely in three attempts.
 			for i := 0; i < 3; i++ {
 				serverLocksResp, err := client.GetLocks()
 				if err == nil {
@@ -376,7 +416,7 @@ func (sys *NotificationSys) GetLocks(ctx context.Context) []*PeerLocks {
 	return locksResp
 }
 
-// SetBucketPolicy - calls SetBucketPolicy RPC call on all peers.
+// SetBucketPolicy - calls SetBucketPolicy REST call on all peers.
 func (sys *NotificationSys) SetBucketPolicy(ctx context.Context, bucketName string, bucketPolicy *policy.Policy) {
 	go func() {
 		var wg sync.WaitGroup
@@ -397,7 +437,7 @@ func (sys *NotificationSys) SetBucketPolicy(ctx context.Context, bucketName stri
 	}()
 }
 
-// RemoveBucketPolicy - calls RemoveBucketPolicy RPC call on all peers.
+// RemoveBucketPolicy - calls RemoveBucketPolicy REST call on all peers.
 func (sys *NotificationSys) RemoveBucketPolicy(ctx context.Context, bucketName string) {
 	go func() {
 		var wg sync.WaitGroup
@@ -418,7 +458,7 @@ func (sys *NotificationSys) RemoveBucketPolicy(ctx context.Context, bucketName s
 	}()
 }
 
-// PutBucketNotification - calls PutBucketNotification RPC call on all peers.
+// PutBucketNotification - calls PutBucketNotification REST call on all peers.
 func (sys *NotificationSys) PutBucketNotification(ctx context.Context, bucketName string, rulesMap event.RulesMap) {
 	go func() {
 		var wg sync.WaitGroup
@@ -439,7 +479,7 @@ func (sys *NotificationSys) PutBucketNotification(ctx context.Context, bucketNam
 	}()
 }
 
-// ListenBucketNotification - calls ListenBucketNotification RPC call on all peers.
+// ListenBucketNotification - calls ListenBucketNotification REST call on all peers.
 func (sys *NotificationSys) ListenBucketNotification(ctx context.Context, bucketName string, eventNames []event.Name, pattern string,
 	targetID event.TargetID, localPeer xnet.Host) {
 	go func() {
@@ -461,7 +501,7 @@ func (sys *NotificationSys) ListenBucketNotification(ctx context.Context, bucket
 	}()
 }
 
-// AddRemoteTarget - adds event rules map, HTTP/PeerRPC client target to bucket name.
+// AddRemoteTarget - adds event rules map, HTTP/PeerREST client target to bucket name.
 func (sys *NotificationSys) AddRemoteTarget(bucketName string, target event.Target, rulesMap event.RulesMap) error {
 	if err := sys.targetList.Add(target); err != nil {
 		return err
@@ -486,7 +526,7 @@ func (sys *NotificationSys) AddRemoteTarget(bucketName string, target event.Targ
 	return nil
 }
 
-// RemoteTargetExist - checks whether given target ID is a HTTP/PeerRPC client target or not.
+// RemoteTargetExist - checks whether given target ID is a HTTP/PeerREST client target or not.
 func (sys *NotificationSys) RemoteTargetExist(bucketName string, targetID event.TargetID) bool {
 	sys.Lock()
 	defer sys.Unlock()
@@ -499,7 +539,7 @@ func (sys *NotificationSys) RemoteTargetExist(bucketName string, targetID event.
 	return ok
 }
 
-// ListenBucketNotificationArgs - listen bucket notification RPC arguments.
+// ListenBucketNotificationArgs - listen bucket notification REST arguments.
 type ListenBucketNotificationArgs struct {
 	BucketName string         `json:"-"`
 	EventNames []event.Name   `json:"eventNames"`
@@ -681,7 +721,7 @@ func (sys *NotificationSys) RemoveNotification(bucketName string) {
 	delete(sys.bucketRemoteTargetRulesMap, bucketName)
 }
 
-// RemoveAllRemoteTargets - closes and removes all HTTP/PeerRPC client targets.
+// RemoveAllRemoteTargets - closes and removes all HTTP/PeerREST client targets.
 func (sys *NotificationSys) RemoveAllRemoteTargets() {
 	for _, targetMap := range sys.bucketRemoteTargetRulesMap {
 		for targetID := range targetMap {

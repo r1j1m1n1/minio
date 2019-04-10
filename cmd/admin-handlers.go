@@ -1415,3 +1415,62 @@ func (a adminAPIHandlers) SetConfigKeysHandler(w http.ResponseWriter, r *http.Re
 	// Send success response
 	writeSuccessResponseHeadersOnly(w)
 }
+
+// APIStatsData holds statistics of one node.
+type APIStatsData struct {
+	Requests    int64         `json:"requests"`
+	Failures    int64         `json:"failures"`
+	AvgLatency  time.Duration `json:"avglatency"`
+	MaxLatency  time.Duration `json:"maxlatency"`
+	MinLatency  time.Duration `json:"minlatency"`
+	AvgBytesIn  int64         `json:"avgbytesin"`
+	AvgBytesOut int64         `json:"avgbytesout"`
+	MaxBytesIn  int64         `json:"maxbytesin"`
+	MaxBytesOut int64         `json:"maxbytesout"`
+	MinBytesIn  int64         `json:"minbytesin"`
+	MinBytesOut int64         `json:"minbytesout"`
+}
+
+// APIStats holds API statistics of one node
+type APIStats struct {
+	Error string                   `json:"error"`
+	Addr  string                   `json:"addr"`
+	Data  map[string]*APIStatsData `json:"data"`
+}
+
+// TopAPIStatsHandler Get list API statistics of all nodes
+func (a adminAPIHandlers) TopAPIStatsHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := newContext(r, w, "TopAPIStats")
+
+	objectAPI := validateAdminReq(ctx, w, r)
+	if objectAPI == nil {
+		return
+	}
+
+	thisAddr, err := xnet.ParseHost(GetLocalPeer(globalEndpoints))
+	if err != nil {
+		writeErrorResponseJSON(ctx, w, toAdminAPIErr(ctx, err), r.URL)
+		return
+	}
+
+	peerAPIStats := globalNotificationSys.GetAPIStats(ctx)
+	// Once we have received APIStats from peers
+	// add the local APIStats as well.
+	globalAPIStatsMu.RLock()
+	peerAPIStats = append(peerAPIStats, &APIStats{
+		Addr: thisAddr.String(),
+		Data: globalAPIStats,
+	})
+	globalAPIStatsMu.RUnlock()
+
+	// Marshal API response
+	jsonBytes, err := json.Marshal(peerAPIStats)
+	if err != nil {
+		writeErrorResponseJSON(ctx, w, toAdminAPIErr(ctx, err), r.URL)
+		return
+	}
+
+	// Reply with storage information (across nodes in a
+	// distributed setup) as json.
+	writeSuccessResponseJSON(w, jsonBytes)
+}

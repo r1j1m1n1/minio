@@ -76,3 +76,52 @@ func (adm *AdminClient) TopLocks() (LockEntries, error) {
 	err = json.Unmarshal(response, &lockEntries)
 	return lockEntries, err
 }
+
+// APIStatsData holds statistics of one node.
+type APIStatsData struct {
+	Requests    uint64        `json:"requests"`
+	Failures    uint64        `json:"failures"`
+	AvgLatency  time.Duration `json:"avglatency"`
+	MaxLatency  time.Duration `json:"maxlatency"`
+	MinLatency  time.Duration `json:"minlatency"`
+	AvgBytesIn  uint64        `json:"avgbytesin"`
+	AvgBytesOut uint64        `json:"avgbytesout"`
+	MaxBytesIn  uint64        `json:"maxbytesin"`
+	MaxBytesOut uint64        `json:"maxbytesout"`
+	MinBytesIn  uint64        `json:"minbytesin"`
+	MinBytesOut uint64        `json:"minbytesout"`
+}
+
+// APIStats holds API statistics of one node
+type APIStats struct {
+	Error string                  `json:"error"`
+	Addr  string                  `json:"addr"`
+	Data  map[string]APIStatsData `json:"data"`
+}
+
+type APIStatEntries []APIStats
+
+// TopStatsAPI - returns API statistics in a minio setup.
+func (adm *AdminClient) TopStatsAPI() (APIStatEntries, error) {
+	// Execute GET on /minio/admin/v1/top/stats/api
+	// to get the API statistics in a minio setup.
+	resp, err := adm.executeMethod("GET",
+		requestData{relPath: "/v1/top/stats/api"})
+	defer closeResponse(resp)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, httpRespToErrorResponse(resp)
+	}
+
+	response, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return APIStatEntries{}, err
+	}
+
+	var apiStatEntries APIStatEntries
+	err = json.Unmarshal(response, &apiStatEntries)
+	return apiStatEntries, err
+}

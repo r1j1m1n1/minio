@@ -534,7 +534,7 @@ func testServicesCmdHandler(cmd cmdType, t *testing.T) {
 	}
 	defer adminTestBed.TearDown()
 
-	// Initialize admin peers to make admin RPC calls. Note: In a
+	// Initialize admin peers to make admin REST calls. Note: In a
 	// single node setup, this degenerates to a simple function
 	// call under the hood.
 	globalMinioAddr = "127.0.0.1:9000"
@@ -627,7 +627,7 @@ func TestGetConfigHandler(t *testing.T) {
 	}
 	defer adminTestBed.TearDown()
 
-	// Initialize admin peers to make admin RPC calls.
+	// Initialize admin peers to make admin REST calls.
 	globalMinioAddr = "127.0.0.1:9000"
 
 	// Prepare query params for get-config mgmt REST API.
@@ -655,7 +655,7 @@ func TestSetConfigHandler(t *testing.T) {
 	}
 	defer adminTestBed.TearDown()
 
-	// Initialize admin peers to make admin RPC calls.
+	// Initialize admin peers to make admin REST calls.
 	globalMinioAddr = "127.0.0.1:9000"
 
 	// Prepare query params for set-config mgmt REST API.
@@ -726,7 +726,7 @@ func TestAdminServerInfo(t *testing.T) {
 	}
 	defer adminTestBed.TearDown()
 
-	// Initialize admin peers to make admin RPC calls.
+	// Initialize admin peers to make admin REST calls.
 	globalMinioAddr = "127.0.0.1:9000"
 
 	// Prepare query params for set-config mgmt REST API.

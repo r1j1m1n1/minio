@@ -31,7 +31,7 @@ import (
 )
 
 const (
-	// Lock rpc server endpoint.
+	// Lock REST server endpoint.
 	lockServiceSubPath = "/lock"
 
 	// Lock maintenance interval.

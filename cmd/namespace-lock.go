@@ -78,7 +78,7 @@ func newDsyncNodes(endpoints EndpointList) (clnts []dsync.NetLocker, myNode int)
 			locker = &(receiver.ll)
 		} else {
 			host, err := xnet.ParseHost(endpoint.Host)
-			logger.FatalIf(err, "Unable to parse Lock RPC Host")
+			logger.FatalIf(err, "Unable to parse Lock REST Host")
 			locker = newlockRESTClient(host)
 		}
 

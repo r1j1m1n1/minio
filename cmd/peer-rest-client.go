@@ -80,7 +80,7 @@ func (client *peerRESTClient) String() string {
 	return client.host.String()
 }
 
-// IsOnline - returns whether RPC client failed to connect or not.
+// IsOnline - returns whether REST client failed to connect or not.
 func (client *peerRESTClient) IsOnline() bool {
 	return client.connected
 }
@@ -104,6 +104,20 @@ func (client *peerRESTClient) GetLocks() (locks GetLocksResp, err error) {
 	defer http.DrainBody(respBody)
 	err = gob.NewDecoder(respBody).Decode(&locks)
 	return locks, err
+}
+
+// GetAPIStatsResp stores APIStats on the server.
+type GetAPIStatsResp map[string]*APIStatsData
+
+// GetAPIStats - Get API Stats for a remote node.
+func (client *peerRESTClient) GetAPIStats() (stats GetAPIStatsResp, err error) {
+	respBody, err := client.call(peerRESTMethodGetAPIStats, nil, nil, -1)
+	if err != nil {
+		return
+	}
+	defer http.DrainBody(respBody)
+	err = gob.NewDecoder(respBody).Decode(&stats)
+	return stats, err
 }
 
 // ServerInfo - fetch server information for a remote node.
@@ -230,7 +244,7 @@ func (client *peerRESTClient) ListenBucketNotification(bucket string, eventNames
 	return nil
 }
 
-// SendEvent - calls send event RPC.
+// SendEvent - calls send event REST.
 func (client *peerRESTClient) SendEvent(bucket string, targetID, remoteTargetID event.TargetID, eventData event.Event) error {
 	args := sendEventRequest{
 		TargetID: remoteTargetID,

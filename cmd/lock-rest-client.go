@@ -174,17 +174,17 @@ func (client *lockRESTClient) RUnlock(args dsync.LockArgs) (reply bool, err erro
 	return client.restCall(lockRESTMethodRUnlock, args)
 }
 
-// Unlock calls write unlock RPC.
+// Unlock calls write unlock REST.
 func (client *lockRESTClient) Unlock(args dsync.LockArgs) (reply bool, err error) {
 	return client.restCall(lockRESTMethodUnlock, args)
 }
 
-// ForceUnlock calls force unlock RPC.
+// ForceUnlock calls force unlock REST.
 func (client *lockRESTClient) ForceUnlock(args dsync.LockArgs) (reply bool, err error) {
 	return client.restCall(lockRESTMethodForceUnlock, args)
 }
 
-// Expired calls expired RPC.
+// Expired calls expired REST.
 func (client *lockRESTClient) Expired(args dsync.LockArgs) (reply bool, err error) {
 	return client.restCall(lockRESTMethodExpired, args)
 }

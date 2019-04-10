@@ -117,6 +117,22 @@ func (s *peerRESTServer) GetLocksHandler(w http.ResponseWriter, r *http.Request)
 
 }
 
+// GetAPIStatsHandler - returns API stats from the server.
+func (s *peerRESTServer) GetAPIStatsHandler(w http.ResponseWriter, r *http.Request) {
+	if !s.IsValid(w, r) {
+		s.writeErrorResponse(w, errors.New("Invalid request"))
+		return
+	}
+
+	ctx := newContext(r, w, "GetAPIStats")
+	globalAPIStatsMu.RLock()
+	defer globalAPIStatsMu.RUnlock()
+	logger.LogIf(ctx, gob.NewEncoder(w).Encode(globalAPIStats))
+
+	w.(http.Flusher).Flush()
+
+}
+
 // LoadUsersHandler - returns server info.
 func (s *peerRESTServer) LoadUsersHandler(w http.ResponseWriter, r *http.Request) {
 	if !s.IsValid(w, r) {
@@ -565,6 +581,8 @@ func (s *peerRESTServer) IsValid(w http.ResponseWriter, r *http.Request) bool {
 func registerPeerRESTHandlers(router *mux.Router) {
 	server := &peerRESTServer{}
 	subrouter := router.PathPrefix(peerRESTPath).Subrouter()
+
+	subrouter.Methods(http.MethodPost).Path("/" + peerRESTMethodGetAPIStats).HandlerFunc(httpTraceHdrs(server.GetAPIStatsHandler))
 	subrouter.Methods(http.MethodPost).Path("/" + peerRESTMethodGetLocks).HandlerFunc(httpTraceHdrs(server.GetLocksHandler))
 	subrouter.Methods(http.MethodPost).Path("/" + peerRESTMethodServerInfo).HandlerFunc(httpTraceHdrs(server.ServerInfoHandler))
 	subrouter.Methods(http.MethodPost).Path("/" + peerRESTMethodCPULoadInfo).HandlerFunc(httpTraceHdrs(server.CPULoadInfoHandler))
