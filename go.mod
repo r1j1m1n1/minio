@@ -23,7 +23,6 @@ require (
 	github.com/elazarl/go-bindata-assetfs v1.0.0
 	github.com/fatih/color v1.7.0
 	github.com/fatih/structs v1.1.0
-	github.com/go-ini/ini v1.42.0 // indirect
 	github.com/go-sql-driver/mysql v1.4.1
 	github.com/golang/groupcache v0.0.0-20190129154638-5b532d6fd5ef // indirect
 	github.com/golang/snappy v0.0.1
@@ -67,6 +66,7 @@ require (
 	github.com/nats-io/go-nats-streaming v0.4.2
 	github.com/nats-io/nats v1.7.2
 	github.com/nats-io/nkeys v0.0.2 // indirect
+	github.com/nats-io/nuid v1.0.1 // indirect
 	github.com/nsqio/go-nsq v1.0.7
 	github.com/pascaldekloe/goe v0.1.0 // indirect
 	github.com/pkg/errors v0.8.1 // indirect
@@ -95,10 +95,10 @@ require (
 	golang.org/x/crypto v0.0.0-20190404164418-38d8ce5564a5
 	golang.org/x/net v0.0.0-20190403144856-b630fd6fe46b
 	golang.org/x/sys v0.0.0-20190403152447-81d4e9dc473e
-	golang.org/x/time v0.0.0-20190308202827-9d24e82272b4
-	golang.org/x/tools v0.0.0-20190404132500-923d25813098 // indirect
+	golang.org/x/time v0.0.0-20190308202827-9d24e82272b4 // indirect
 	google.golang.org/api v0.3.0
 	gopkg.in/Shopify/sarama.v1 v1.20.0
+	gopkg.in/cheggaaa/pb.v1 v1.0.28 // indirect
 	gopkg.in/olivere/elastic.v5 v5.0.80
 	gopkg.in/yaml.v2 v2.2.2
 )
