@@ -206,10 +206,10 @@ func (sys *NotificationSys) DownloadProfilingData(ctx context.Context, writer io
 		}
 
 		profilingDataFound = true
-
+		hostString := strings.Replace(client.host.String(), ":", "_", -1)
 		// Send profiling data to zip as file
 		header, zerr := zip.FileInfoHeader(dummyFileInfo{
-			name:    fmt.Sprintf("profiling-%s.pprof", client.host.String()),
+			name:    fmt.Sprintf("profiling-%s.pprof", hostString),
 			size:    int64(len(data)),
 			mode:    0600,
 			modTime: UTCNow(),
@@ -253,9 +253,10 @@ func (sys *NotificationSys) DownloadProfilingData(ctx context.Context, writer io
 
 	profilingDataFound = true
 
+	hostString := strings.Replace(thisAddr.String(), ":", "_", -1)
 	// Send profiling data to zip as file
 	header, zerr := zip.FileInfoHeader(dummyFileInfo{
-		name:    fmt.Sprintf("profiling-%s.pprof", thisAddr),
+		name:    fmt.Sprintf("profiling-%s.pprof", hostString),
 		size:    int64(len(data)),
 		mode:    0600,
 		modTime: UTCNow(),
